@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyChart - Appointment Preparation</title>
+    <script src="patients-data.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #f5f5f5;
+        }
+        
+        /* Epic MyChart Header */
+        .epic-header {
+            background: #0066cc;
+            color: white;
+            padding: 16px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .epic-header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .epic-logo { font-size: 24px; font-weight: 700; }
+        .patient-name { font-size: 14px; opacity: 0.9; }
+        
+        /* Epic Sidebar */
+        .epic-layout {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: calc(100vh - 60px);
+        }
+        
+        .epic-sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px 0;
+        }
+        
+        .nav-item {
+            padding: 12px 24px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover { background: #f5f5f5; }
+        .nav-item.active {
+            background: #e6f2ff;
+            border-left-color: #0066cc;
+            color: #0066cc;
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        .epic-content {
+            flex: 1;
+            padding: 30px;
+            background: #f5f5f5;
+        }
+        
+        .content-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .notification-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        
+        h1 { font-size: 28px; color: #0066cc; margin-bottom: 12px; }
+        h2 { font-size: 20px; margin-bottom: 16px; color: #333; }
+        h3 { font-size: 16px; margin-bottom: 12px; }
+        
+        .appointment-info {
+            background: #e6f2ff;
+            border-left: 4px solid #0066cc;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .info-row {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-weight: 600; color: #666; }
+        
+        .btn-epic {
+            background: #0066cc;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-epic:hover { background: #0052a3; }
+        
+        .upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .upload-zone:hover {
+            border-color: #0066cc;
+            background: #f5f5f5;
+        }
+        
+        .upload-zone.dragging {
+            border-color: #0066cc;
+            background: #e6f2ff;
+        }
+        
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        
+        .file-item {
+            background: #f0fdf4;
+            border: 1px solid #6ee7b7;
+            border-left: 4px solid #10b981;
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .imported-status {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Epic Header -->
+    <div class="epic-header">
+        <div class="epic-header-content">
+            <div class="epic-logo">MyChart</div>
+            <div class="patient-name" id="patient-name"></div>
+        </div>
+    </div>
+
+    <!-- Epic Layout -->
+    <div class="epic-layout">
+        <!-- Sidebar -->
+        <div class="epic-sidebar">
+            <div class="nav-item active">Messages</div>
+            <div class="nav-item">Appointments</div>
+            <div class="nav-item">Test Results</div>
+            <div class="nav-item">Medications</div>
+            <div class="nav-item">Medical Record</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="epic-content">
+            <!-- Notification Banner -->
+            <div class="notification-banner">
+                <div style="font-size: 20px; margin-bottom: 8px;">📋 Action Required</div>
+                <p style="color: #856404;">Please upload your medical records before your appointment with Dr. Sharma.</p>
+            </div>
+
+            <!-- Appointment Info -->
+            <div class="content-card">
+                <h1>Upcoming Appointment</h1>
+                <p style="color: #666; margin-bottom: 20px;">Pediatric to Adult Care Planning</p>
+
+                <div class="appointment-info">
+                    <h3 style="margin-bottom: 16px;">Appointment Details</h3>
+                    <div class="info-row">
+                        <div class="info-label">Date & Time:</div>
+                        <div id="appt-date"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Provider:</div>
+                        <div id="appt-provider"></div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Location:</div>
+                        <div>Virtual Visit (Video)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Records -->
+            <div class="content-card">
+                <h2>Upload Your Medical Records</h2>
+                
+                <!-- Import from Health System -->
+                <div style="margin-bottom: 40px;">
+                    <h3>Import from Your Health System</h3>
+                    <p style="color: #666; margin-bottom: 16px; font-size: 14px;">Connect to automatically import your records</p>
+                    
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <select id="emr-select" style="flex: 1; min-width: 250px; max-width: 350px;">
+                            <option value="">Select your health system...</option>
+                            <option value="epic">Epic MyChart</option>
+                            <option value="athena">Athena Health</option>
+                            <option value="cerner">Cerner</option>
+                            <option value="allscripts">Allscripts</option>
+                        </select>
+                        <button class="btn-epic" onclick="importFromEMR()">Connect & Import</button>
+                    </div>
+                    
+                    <div id="imported-status" style="display: none;" class="imported-status">
+                        <strong style="color: #065f46;">✓ Connected to <span id="emr-name"></span></strong>
+                        <div style="color: #065f46; font-size: 14px; margin-top: 4px;" id="imported-count"></div>
+                    </div>
+                </div>
+
+                <!-- Upload Documents -->
+                <div>
+                    <h3>Or Upload Documents</h3>
+                    <p style="color: #666; margin-bottom: 16px; font-size: 14px;">Drag and drop files or click to browse</p>
+                    
+                    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                        <div class="upload-icon">📄</div>
+                        <h3>Drag files here or click to upload</h3>
+                        <p style="color: #666; margin-top: 8px; font-size: 14px;">PDF, JPG, PNG accepted</p>
+                    </div>
+                    <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="handleUpload(this.files)">
+                    
+                    <div id="file-list"></div>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="content-card">
+                <h2>Ready to Submit?</h2>
+                <p style="color: #666; margin-bottom: 20px;">Your care team will review these records before your appointment</p>
+                
+                <button class="btn-epic" onclick="submitAll()" style="padding: 16px 48px; font-size: 18px;">Submit All Records</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientId = parseInt(urlParams.get('patient')) || 1;
+        const patient = getPatientById(patientId);
+
+        let uploadedFiles = [];
+        let importedRecords = 0;
+
+        function init() {
+            document.getElementById('patient-name').textContent = patient.name;
+            
+            const apptDate = new Date();
+            apptDate.setDate(apptDate.getDate() + 7);
+            document.getElementById('appt-date').textContent = apptDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+            
+            document.getElementById('appt-provider').textContent = patient.primaryPhysician;
+        }
+
+        function importFromEMR() {
+            const emr = document.getElementById('emr-select').value;
+            if (!emr) {
+                alert('Please select your health system');
+                return;
+            }
+            
+            const emrNames = {
+                'epic': 'Epic MyChart',
+                'athena': 'Athena Health',
+                'cerner': 'Cerner',
+                'allscripts': 'Allscripts'
+            };
+            
+            // Simulate import
+            importedRecords = 3;
+            document.getElementById('imported-status').style.display = 'block';
+            document.getElementById('emr-name').textContent = emrNames[emr];
+            document.getElementById('imported-count').textContent = `${importedRecords} records imported successfully`;
+        }
+
+        // Drag and drop
+        const uploadZone = document.getElementById('upload-zone');
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragging');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragging');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragging');
+            handleUpload(e.dataTransfer.files);
+        });
+
+        function handleUpload(files) {
+            Array.from(files).forEach(file => {
+                uploadedFiles.push({
+                    name: file.name,
+                    size: (file.size / 1024).toFixed(1) + ' KB',
+                    date: new Date().toLocaleDateString()
+                });
+            });
+
+            document.getElementById('file-list').innerHTML = uploadedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div>
+                        <div style="font-weight: 600;">${file.name}</div>
+                        <div style="font-size: 14px; color: #065f46; margin-top: 4px;">${file.size} • Uploaded ${file.date}</div>
+                    </div>
+                    <span style="color: #10b981; font-weight: 600;">✓</span>
+                </div>
+            `).join('');
+            
+            // Store files for doctor view
+            localStorage.setItem('patientUploadedFiles', JSON.stringify(uploadedFiles));
+        }
+
+        function submitAll() {
+            if (uploadedFiles.length === 0 && importedRecords === 0) {
+                alert('Please import or upload at least one record before submitting.');
+                return;
+            }
+            
+            const success = document.createElement('div');
+            success.className = 'success-message';
+            success.innerHTML = `
+                <h3 style="color: #155724; margin-bottom: 8px;">✓ Successfully Submitted!</h3>
+                <p style="color: #155724;">Your records have been sent to your care team.</p>
+                <p style="color: #155724; margin-top: 12px;"><strong>Submitted:</strong> ${importedRecords} imported records, ${uploadedFiles.length} uploaded documents</p>
+            `;
+            
+            document.querySelector('.epic-content').insertBefore(
+                success, 
+                document.querySelector('.epic-content').firstChild.nextSibling
+            );
+            
+            window.scrollTo(0, 0);
+            
+            // Store submission status
+            localStorage.setItem('patientSubmitted', 'true');
+            localStorage.setItem('importedRecordsCount', importedRecords.toString());
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
