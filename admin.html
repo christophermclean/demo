@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthSync Admin Portal</title>
+    <script src="patients-data.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #f8fafc;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        
+        nav { padding: 20px 0; background: white; border-bottom: 1px solid #e5e5e5; }
+        
+        .logo { font-size: 24px; font-weight: 600; color: #2563eb; }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        h1 { font-size: 32px; margin: 30px 0 20px 0; }
+        
+        .patient-table {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        
+        td {
+            padding: 16px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        tr:hover { background: #f9fafb; }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-complete { background: #10b981; }
+        .status-pending { background: #f59e0b; }
+        .status-urgent { background: #dc2626; }
+        
+        .btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-primary:hover { background: #1d4ed8; }
+        
+        .btn-secondary {
+            background: white;
+            color: #2563eb;
+            border: 1px solid #2563eb;
+        }
+        
+        .btn-secondary:hover { background: #eff6ff; }
+        
+        .appointments {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+        
+        .appointment-item {
+            padding: 16px;
+            background: #f9fafb;
+            border-left: 4px solid #2563eb;
+            border-radius: 6px;
+            margin: 12px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="container">
+            <div class="nav-links">
+                <div class="logo">HealthSync Admin</div>
+                <div>
+                    <a href="epic-provider.html" class="nav-link">Doctor Portal</a>
+                    <a href="mychart.html" class="nav-link">Patient Portal</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Patient Management</h1>
+        <p style="color: #64748b; margin-bottom: 30px;">Monitor patient record uploads and send reminders</p>
+
+        <!-- Patient Status Table -->
+        <div class="patient-table">
+            <h2 style="margin-bottom: 20px;">All Patients</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Patient</th>
+                        <th>MRN</th>
+                        <th>Next Appointment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patients-table"></tbody>
+            </table>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        <div class="appointments">
+            <h2 style="margin-bottom: 20px;">Upcoming Appointments</h2>
+            <div id="appointments-list"></div>
+        </div>
+    </div>
+
+    <script>
+        function loadPatients() {
+            const tbody = document.getElementById('patients-table');
+            
+            // Check if patient has submitted
+            const submission = JSON.parse(localStorage.getItem('patientSubmission') || 'null');
+            
+            tbody.innerHTML = PATIENTS_DATA.map(p => {
+                // Maya Chen (id=1) shows as complete if submitted, others pending
+                const status = (p.id === 1 && submission) ? 'complete' : 'pending';
+                const statusText = status === 'complete' ? 'Submitted' : 'Pending';
+                
+                return `
+                    <tr>
+                        <td>
+                            <span class="status-dot status-${status}"></span>
+                            ${statusText}
+                        </td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.mrn}</td>
+                        <td>${new Date(p.nextVisit).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="sendLink(${p.id})">Send Link</button>
+                            <button class="btn btn-secondary" onclick="sendReminder(${p.id})" style="margin-left: 8px;">Send Reminder</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function loadAppointments() {
+            const list = document.getElementById('appointments-list');
+            
+            list.innerHTML = PATIENTS_DATA.map(p => `
+                <div class="appointment-item">
+                    <div>
+                        <div style="font-weight: 600;">${p.name}</div>
+                        <div style="font-size: 14px; color: #64748b; margin-top: 4px;">
+                            ${new Date(p.nextVisit).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                month: 'long', 
+                                day: 'numeric', 
+                                year: 'numeric' 
+                            })}
+                        </div>
+                    </div>
+                    <span class="status-dot status-pending"></span>
+                </div>
+            `).join('');
+        }
+
+        function sendLink(patientId) {
+            const patient = getPatientById(patientId);
+            const link = `${window.location.origin}/mychart.html?patient=${patient.id}`;
+            
+            alert(`✓ Upload link sent to ${patient.name}\n\nEmail: ${patient.email}\nLink: ${link}\n\nPatient can now upload their records.`);
+        }
+
+        function sendReminder(patientId) {
+            const patient = getPatientById(patientId);
+            alert(`✓ Reminder sent to ${patient.name}\n\nEmail: ${patient.email}\n\nReminder: Please upload your medical records before your appointment.`);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPatients();
+            loadAppointments();
+        });
+    </script>
+</body>
+</html>
